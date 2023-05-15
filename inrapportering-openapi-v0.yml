@@ -1,0 +1,333 @@
+openapi: 3.0.3
+info:
+  description: "Inrapportering av löner och annat"
+  version: "0"
+  title: Inrapportering
+  contact:
+    email: anders.freden@collectum.se
+tags:
+  - name: person
+    description: Anmälan, avanmälan och flytt
+  - name: remuneration
+    description: Löneändring
+  - name: health
+    description: Sjuk-/friskanmälan
+
+paths:
+  /persons:
+    post:
+      tags:
+        - person
+      summary: Nyanmälan
+      description: Nyanmälan
+      operationId: addPerson
+      requestBody:
+        $ref: "#/components/requestBodies/Person"
+      responses:
+        "201":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Person"
+        "422":
+          $ref: "#/components/responses/InvalidRequestBody"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /persons/{identity_number}:
+    parameters:
+      - name: identity_number
+        in: path
+        description: Personnummer för den anställde
+        required: true
+        schema:
+          $ref: "#/components/schemas/Personnummer"
+    patch:
+      tags:
+        - person
+      summary: Flytt av anställd inom koncern
+      description: Flytt av anställd inom koncern
+      operationId: movePerson
+      requestBody:
+        $ref: "#/components/requestBodies/Move"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Person"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/InvalidRequestBody"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - person
+      summary: Avanmälan
+      description: Avanmälan
+      operationId: deletePerson
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                reason:
+                  type: integer
+      responses:
+        "204":
+          description: successful operation
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /persons/{identity_number}/remunerations:
+    put:
+      tags:
+        - remuneration
+      summary: Löneändring
+      description: Löneändring
+      operationId: changeRemunerationsForEmployee
+      requestBody:
+        $ref: "#/components/requestBodies/Remunerations"
+      parameters:
+        - name: identity_number
+          in: path
+          description: Personnummer för den anställde
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Person"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/InvalidRequestBody"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /persons/{identity_number}/sickness-health-applications:
+    post:
+      tags:
+        - health
+      summary: Sjuk-/friskanmälan
+      description: Sjuk-/friskanmälan
+      operationId: createSicknessHealthApplication
+      requestBody:
+        $ref: "#/components/requestBodies/SicknessHealthApplication"
+      parameters:
+        - name: identity_number
+          in: path
+          description: Personnummer för den anställde
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: successful operation
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/InvalidRequestBody"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+servers:
+  - url: https://api.collectum.se
+
+components:
+  requestBodies:
+    Remunerations:
+      content:
+        application/json:
+          schema:
+            properties:
+              orgNumber:
+                $ref: "#/components/schemas/Organisationsnummer"
+              eventDate:
+                $ref: "#/components/schemas/EventDate"
+              remunerations:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Remuneration"
+            required:
+              - orgNumber
+              - eventDate
+              - remunerations
+      description: List of remunerations to replace the old ones
+      required: true
+    Person:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Person"
+      description: Person
+      required: true
+    Move:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              orgNumber:
+                $ref: "#/components/schemas/Organisationsnummer"
+              costCenter:
+                $ref: "#/components/schemas/CostCenter"
+              eventDate:
+                $ref: "#/components/schemas/EventDate"
+              planId:
+                $ref: "#/components/schemas/PlanId"
+            required:
+              - orgNumber
+              - costCenter
+              - eventDate
+              - planId
+      required: true
+    SicknessHealthApplication:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              orgNumber:
+                $ref: "#/components/schemas/Organisationsnummer"
+              eventDate:
+                $ref: "#/components/schemas/EventDate"
+            required:
+              - orgNumber
+              - eventDate
+      description: Person
+      required: true
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidRequestBody:
+      description: The request body is invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Personnummer:
+      type: string
+      pattern: "^(19|20)(\\d{6}-\\d{4})$"
+    Organisationsnummer:
+      type: string
+      pattern: "^(1[689]|20)?(\\d{6})(-\\d{4})$"
+    Person:
+      type: object
+      properties:
+        orgNumber:
+          $ref: "#/components/schemas/Organisationsnummer"
+        personalIdNumber:
+          $ref: "#/components/schemas/Personnummer"
+        costCenter:
+          $ref: "#/components/schemas/CostCenter"
+        planId:
+          $ref: "#/components/schemas/PlanId"
+        surname:
+          type: string
+        firstName:
+          type: string
+        currentMonthSalaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/Remuneration"
+        agreedSalaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/Remuneration"
+      required:
+        - orgNumber
+        - personalIdNumber
+        - costCenter
+        - planId
+        - surname
+        - firstName
+        - currentMonthSalaries
+        - agreedSalaries
+    Remuneration:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: integer
+        amount:
+          type: integer
+      required:
+        - name
+        - type
+        - amount
+    EventDate:
+      type: string
+      format: date
+    PlanId:
+      type: string
+      pattern: "^\\d{1,10}$"
+    CostCenter:
+      type: string
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+        reason:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+      required:
+        - status
+        - reason
+        - message
+        - path
