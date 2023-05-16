@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
 
 plugins {
 	id("org.springframework.boot") version "3.0.6"
@@ -83,3 +84,15 @@ sourceSets {
 tasks.compileKotlin {
 	dependsOn("openApiGenerate")
 }
+
+/*
+// Se nedan för mer information om Spring Boot Gradle plugin
+// https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
+
+tasks.named<BootBuildImage>("bootBuildImage") {
+	val bpConf = mapOf("BP_BINARY_COMPRESSION_METHOD" to "upx") // upx or gzexe
+
+	imageName.set("collectum.se/library/${project.name}")
+	environment.set(environment.get() + bpConf)
+}
+*/
